@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orbit — Smart Market Watchlist</title>
+  <meta name="description" content="A smart stock watchlist that surfaces meaningful changes relative to each stock's own volatility — not a flat global threshold." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Ambient orbs ──────────────────────────────────────── -->
+  <div class="orb orb-1" aria-hidden="true"></div>
+  <div class="orb orb-2" aria-hidden="true"></div>
+  <div class="orb orb-3" aria-hidden="true"></div>
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="header-inner">
+
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
+            <path d="M8 22 L13 14 L17 18 L21 10 L24 14" stroke="#030507" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="24" cy="14" r="2.5" fill="#030507"/>
+            <defs>
+              <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
+                <stop offset="0%" stop-color="#00d4ff"/>
+                <stop offset="100%" stop-color="#00ff88"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Orbit</span>
+          <span class="brand-sub">Smart Market Watchlist</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div id="last-visit-banner" class="visit-chip" aria-live="polite">
+          <span class="visit-chip-dot"></span>
+          <span id="visit-label">Loading…</span>
+        </div>
+        <div class="data-note" title="yfinance provides 15–20 min delayed quotes (free tier)">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M6 4v2.5l1.5 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          ~15 min delayed
+        </div>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-refresh" class="btn-icon-action" title="Refresh all stocks" aria-label="Refresh watchlist">
+          <svg id="refresh-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 2.5A6.5 6.5 0 1 1 2 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2 5V2h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Refresh</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ── Hero strip ────────────────────────────────────────── -->
+  <div class="hero-strip">
+    <div class="hero-inner">
+
+      <!-- Stats -->
+      <div id="hero-summary" class="hero-summary">
+        <div class="hero-stat">
+          <span class="hero-num" id="h-total">—</span>
+          <span class="hero-lbl">Stocks</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-num hero-num--alert" id="h-alert">—</span>
+          <span class="hero-lbl">Need Attention</span>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-num hero-num--calm" id="h-calm">—</span>
+          <span class="hero-lbl">Quiet</span>
+        </div>
+      </div>
+
+      <!-- Add / Search form -->
+      <div class="add-form">
+        <div class="add-input-wrap" id="add-input-wrap">
+          <!-- Search icon -->
+          <svg class="add-input-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M9 9L12.5 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <input
+            id="symbol-input"
+            type="text"
+            class="add-input"
+            placeholder="Search: Apple, Tesla, Reliance, Bitcoin…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Search for a stock by company name or ticker"
+            aria-autocomplete="list"
+            aria-controls="search-dropdown"
+            aria-expanded="false"
+          />
+          <button id="btn-add" class="btn-add" aria-label="Add selected stock">Add</button>
+        </div>
+        <!-- Autocomplete dropdown -->
+        <div id="search-dropdown" class="search-dropdown hidden" role="listbox" aria-label="Search results"></div>
+        <div id="add-feedback" class="add-feedback" aria-live="polite"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Main ──────────────────────────────────────────────── -->
+  <main class="app-main">
+
+    <!-- How it works explainer (collapsible) -->
+    <div id="explainer-panel" class="explainer-panel">
+      <div class="explainer-header" id="explainer-toggle" role="button" aria-expanded="false" aria-controls="explainer-body">
+        <div class="explainer-header-left">
+          <div class="explainer-icon">?</div>
+          <div>
+            <div class="explainer-title">How Orbit works — click to understand what you're seeing</div>
+            <div class="explainer-sub">What the charts, badges, and scores mean · Why we're different from a normal watchlist</div>
+          </div>
+        </div>
+        <svg class="explainer-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="explainer-body" id="explainer-body">
+        <div class="explainer-content">
+
+          <p class="explainer-intro">
+            Most watchlists show the same thing: a price and a % change from yesterday. The problem is —
+            <strong>a 2% move means very different things depending on the stock.</strong> A 2% drop on stable Infosys is big news. A 2% drop on a volatile small-cap is a quiet Tuesday. <strong>Orbit scores each move relative to that stock's own normal behavior</strong>, so you only get alerted when something truly unusual happens for <em>that specific stock</em>.
+          </p>
+
+          <div class="explainer-steps">
+            <div class="explainer-step">
+              <span class="step-num">Step 1 — Learn normal</span>
+              <span class="step-title">Each stock gets a personal volatility baseline</span>
+              <span class="step-body">We look at the last 20 trading days and compute the average daily price swing — weighted so recent days count more. This is the stock's "normal". A stable stock might normally move 0.5%/day. A volatile one might move 3%/day.</span>
+            </div>
+            <div class="explainer-step">
+              <span class="step-num">Step 2 — Measure the move</span>
+              <span class="step-title">Compare today vs what you last saw</span>
+              <span class="step-body">When you return to Orbit, we compare the current price to what it was the last time you opened the app. We then express that move as a multiple of the stock's normal swing — e.g. "2.1× its usual daily range."</span>
+            </div>
+            <div class="explainer-step">
+              <span class="step-num">Step 3 — Surface what's unusual</span>
+              <span class="step-title">Only alert on moves that matter</span>
+              <span class="step-body">If the move is ≥ 1.5× normal, or if trading volume is ≥ 1.5× normal, it's flagged as meaningful and rises to the top. Calm stocks collapse below. You see the most important thing first.</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="chart-label" style="margin-bottom:10px">
+              <span class="chart-label-dot"></span>
+              What each element on a stock card means
+            </div>
+            <div class="explainer-legend">
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#00d4ff;box-shadow:0 0 6px #00d4ff"></span>
+                <strong>Cyan chart</strong> — 20 trading days of market prices (from Yahoo Finance)
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#00ff88;box-shadow:0 0 6px #00ff88"></span>
+                <strong>Green chart</strong> — Your own check-in history (price each time you visited)
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#ffb800;box-shadow:0 0 6px #ffb800"></span>
+                <strong>Volatility bar</strong> — How erratic this stock normally is (wider = more volatile)
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:linear-gradient(90deg,#00ff88,#00d4ff)"></span>
+                <strong>Range gauge</strong> — Where today's price sits between its 52-week low and high
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#b347ff;box-shadow:0 0 6px #b347ff"></span>
+                <strong>Change score bar</strong> — How unusual the move is. The marker at 1.5× is the "meaningful" threshold
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#ff3366;box-shadow:0 0 6px #ff3366"></span>
+                <strong>LOW / MEDIUM / HIGH VOL badge</strong> — This stock's personality: how much it typically moves per day
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#ffb800;box-shadow:0 0 6px #ffb800"></span>
+                <strong>VOL ↑ / VOL ↓ badge</strong> — Whether this stock is becoming MORE or LESS volatile recently
+              </div>
+            </div>
+          </div>
+
+          <p class="explainer-note">
+            ⏱ <strong>Data delay:</strong> Yahoo Finance (yfinance) provides ~15–20 minute delayed quotes on the free tier. The price shown is not a real-time tick — it is the most recent available quote. Historical daily closing prices used for EWMA are fully accurate.
+          </p>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading skeletons -->
+    <div id="loading-state" class="hidden">
+      <div class="skeleton-grid">
+        <div class="skel-card"><div class="skel-line w60"></div><div class="skel-line w40 mt8"></div><div class="skel-spark mt12"></div><div class="skel-line w80 mt12"></div><div class="skel-line w50 mt6"></div></div>
+        <div class="skel-card"><div class="skel-line w60"></div><div class="skel-line w40 mt8"></div><div class="skel-spark mt12"></div><div class="skel-line w80 mt12"></div><div class="skel-line w50 mt6"></div></div>
+        <div class="skel-card"><div class="skel-line w60"></div><div class="skel-line w40 mt8"></div><div class="skel-spark mt12"></div><div class="skel-line w80 mt12"></div><div class="skel-line w50 mt6"></div></div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden">
+      <div class="empty-card">
+        <div class="empty-icon-wrap">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M8 36 L18 20 L26 28 L32 14 L40 22" stroke="url(#eg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="eg" x1="8" y1="36" x2="40" y2="14"><stop stop-color="#00d4ff"/><stop offset="1" stop-color="#00ff88"/></linearGradient></defs></svg>
+        </div>
+        <h2 class="empty-title">Your watchlist is empty</h2>
+        <p class="empty-body">Search for any company by name above — type "Apple", "Tesla", "Reliance", "Bitcoin". No need to know ticker symbols!</p>
+      </div>
+    </div>
+
+    <!-- Alert stocks -->
+    <section id="digest-alert" class="digest-section hidden" aria-label="Stocks needing attention">
+      <div class="section-header">
+        <div class="section-badge section-badge--alert">
+          <span class="badge-pulse"></span>
+          Needs Attention
+        </div>
+        <span class="section-note">Sorted by how unusual the move is for each stock</span>
+      </div>
+      <div id="cards-alert" class="cards-grid"></div>
+    </section>
+
+    <!-- Calm stocks -->
+    <section id="digest-calm" class="digest-section hidden" aria-label="Quiet stocks">
+      <button id="btn-toggle-calm" class="calm-toggle" aria-expanded="false" aria-controls="cards-calm">
+        <div class="calm-toggle-left">
+          <div class="section-badge section-badge--calm">Quiet</div>
+          <span id="calm-toggle-label" class="calm-count"></span>
+        </div>
+        <svg class="calm-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div id="cards-calm" class="cards-grid calm-grid collapsed"></div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
