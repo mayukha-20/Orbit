@@ -37,9 +37,7 @@ market_data.py          # yfinance wrapper + global quote cache
 volatility.py            # EWMA volatility calculation
 change_engine.py         # Change scoring + "since you left" reason strings
 requirements.txt         # Python dependencies
-
-frontend/
-  index.html              # Watchlist + digest views
-  style.css               # Styling
-  app.js                  # Frontend logic, API calls, rendering
+index.html              # Watchlist + digest views
+style.css               # Styling
+app.js                  # Frontend logic, API calls, rendering
 ```
